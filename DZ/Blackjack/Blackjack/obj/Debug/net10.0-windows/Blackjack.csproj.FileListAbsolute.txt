@@ -1,0 +1,17 @@
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\bin\Debug\net10.0-windows\Blackjack.exe
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\bin\Debug\net10.0-windows\Blackjack.deps.json
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\bin\Debug\net10.0-windows\Blackjack.runtimeconfig.json
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\bin\Debug\net10.0-windows\Blackjack.dll
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\bin\Debug\net10.0-windows\Blackjack.pdb
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.Form1.resources
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.csproj.GenerateResource.cache
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.AssemblyInfoInputs.cache
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.AssemblyInfo.cs
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.csproj.CoreCompileInputs.cache
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.sourcelink.json
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.dll
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\refint\Blackjack.dll
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.pdb
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\Blackjack.genruntimeconfig.cache
+C:\Users\Пользователь\Documents\GitHub\ParadigmsConstructions\DZ\Blackjack\Blackjack\obj\Debug\net10.0-windows\ref\Blackjack.dll
