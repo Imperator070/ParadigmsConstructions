@@ -1,94 +1,151 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    CallbackQueryHandler,
-    ContextTypes,
-    ConversationHandler,
-    MessageHandler,
-    filters,
-)
+import logging
+from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.dispatcher import FSMContext
+from aiogram.dispatcher.filters.state import State, StatesGroup
+from aiogram.utils import executor
 
-# Определение состояний
-START, ACTION_CHOSEN, CONFIRMED = range(3)
+# Настройка логирования
+logging.basicConfig(level=logging.INFO)
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = update.effective_user
-    keyboard = [
-        [InlineKeyboardButton("Действие 1", callback_data='action1')],
-        [InlineKeyboardButton("Действие 2", callback_data='action2')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text(
-        f'Привет, {user.first_name}! Выберите действие:',
-        reply_markup=reply_markup
+# Замените на ваш токен
+API_TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+
+# Инициализация бота и диспетчера
+bot = Bot(token=API_TOKEN)
+storage = MemoryStorage()
+dp = Dispatcher(bot, storage=storage)
+
+# Определение состояний FSM
+class ExamStates(StatesGroup):
+    initial = State()         # Начальное состояние
+    topic_selection = State() # Выбор темы
+    answering = State()       # Ответ на вопрос
+
+# База вопросов
+questions_db = {
+    "Математика": {
+        "question": "Сколько будет 2+2*2?",
+        "options": ["4", "6", "8"],
+        "correct": "6"
+    },
+    "Физика": {
+        "question": "Чему равно ускорение свободного падения на Земле?",
+        "options": ["9.8 м/с²", "10 м/с²", "8.9 м/с²"],
+        "correct": "9.8 м/с²"
+    },
+    "Информатика": {
+        "question": "Сколько бит в одном байте?",
+        "options": ["4", "8", "16"],
+        "correct": "8"
+    }
+}
+
+# Обработчик команды /start
+@dp.message_handler(commands=['start'], state='*')
+async def cmd_start(message: types.Message, state: FSMContext):
+    await state.finish()
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    keyboard.add("📚 Начать подготовку")
+
+    await message.answer(
+        "🎓 Привет! Я помогу тебе подготовиться к экзамену.\n"
+        "Нажми кнопку ниже, чтобы начать:",
+        reply_markup=keyboard
     )
-    return START
+    await ExamStates.initial.set()
 
-async def action_chosen(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+# Начальное состояние
+@dp.message_handler(state=ExamStates.initial)
+async def process_initial(message: types.Message, state: FSMContext):
+    if message.text == "📚 Начать подготовку":
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+        keyboard.add(*questions_db.keys())
 
-    action = query.data
-    context.user_data['chosen_action'] = action
+        await message.answer(
+            "📘 Выбери тему для подготовки:",
+            reply_markup=keyboard
+        )
+        await ExamStates.topic_selection.set()
+    else:
+        await message.answer("Пожалуйста, используй кнопки внизу экрана")
 
-    keyboard = [
-        [InlineKeyboardButton("Подтвердить", callback_data='confirm')],
-        [InlineKeyboardButton("Отмена", callback_data='cancel')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await query.edit_message_text(
-        text=f"Вы выбрали: {action}. Подтвердить?",
-        reply_markup=reply_markup
+# Выбор темы
+@dp.message_handler(state=ExamStates.topic_selection)
+async def process_topic_selection(message: types.Message, state: FSMContext):
+    selected_topic = message.text
+
+    if selected_topic not in questions_db:
+        await message.answer("Пожалуйста, выбери тему из предложенных")
+        return
+
+    # Сохраняем выбранную тему
+    await state.update_data(topic=selected_topic)
+
+    # Готовим вопрос
+    question_data = questions_db[selected_topic]
+    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=1)
+    keyboard.add(*question_data["options"])
+
+    await message.answer(
+        f"❓ Вопрос по теме '{selected_topic}':\n\n{question_data['question']}",
+        reply_markup=keyboard
     )
-    return ACTION_CHOSEN
+    await ExamStates.answering.set()
 
-async def confirm(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
+# Обработка ответа
+@dp.message_handler(state=ExamStates.answering)
+async def process_answer(message: types.Message, state: FSMContext):
+    user_answer = message.text
+    data = await state.get_data()
+    topic = data['topic']
+    correct_answer = questions_db[topic]['correct']
 
-    action = context.user_data.get('chosen_action', 'неизвестно')
-    await query.edit_message_text(f"Действие '{action}' выполнено!")
-    return CONFIRMED
+    # Готовим клавиатуру для продолжения
+    continue_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    continue_keyboard.add("📚 Выбрать другую тему", "🏠 Вернуться в меню")
 
-async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_text("Действие отменено.")
-    return CONFIRMED
+    # Проверяем ответ
+    if user_answer == correct_answer:
+        await message.answer(
+            "✅ Правильно! Отлично разбираешься в теме!",
+            reply_markup=continue_keyboard
+        )
+    else:
+        await message.answer(
+            f"❌ Неверно. Правильный ответ: {correct_answer}\n"
+            "Не расстраивайся, попробуй другую тему!",
+            reply_markup=continue_keyboard
+        )
 
-async def reset_to_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # После завершения возвращаем в начальное состояние
-    keyboard = [
-        [InlineKeyboardButton("Начать снова", callback_data='start_over')],
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text("Готово! Нажмите кнопку ниже, чтобы начать заново.", reply_markup=reply_markup)
-    return CONFIRMED
+    # Ожидаем дальнейших действий
+    await ExamStates.initial.set()
 
-def main():
-    TOKEN = "YOUR_BOT_TOKEN_HERE"  # Замените на токен вашего бота
-    application = Application.builder().token(TOKEN).build()
+# Обработчик для возврата в меню
+@dp.message_handler(state=ExamStates.initial)
+async def process_menu_selection(message: types.Message, state: FSMContext):
+    if message.text == "📚 Выбрать другую тему":
+        keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+        keyboard.add(*questions_db.keys())
 
-    conv_handler = ConversationHandler(
-        entry_points=[CommandHandler("start", start)],
-        states={
-            START: [CallbackQueryHandler(action_chosen)],
-            ACTION_CHOSEN: [
-                CallbackQueryHandler(confirm, pattern='^confirm$'),
-                CallbackQueryHandler(cancel, pattern='^cancel$'),
-            ],
-            CONFIRMED: [
-                CallbackQueryHandler(start, pattern='^start_over$'),
-                MessageHandler(filters.TEXT & ~filters.COMMAND, reset_to_start),
-            ],
-        },
-        fallbacks=[]
-    )
+        await message.answer("📘 Выбери новую тему:", reply_markup=keyboard)
+        await ExamStates.topic_selection.set()
 
-    application.add_handler(conv_handler)
+    elif message.text == "🏠 Вернуться в меню":
+        start_keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        start_keyboard.add("📚 Начать подготовку")
 
-    application.run_polling()
+        await message.answer(
+            "🎓 Главное меню. Нажми кнопку ниже для продолжения:",
+            reply_markup=start_keyboard
+        )
+    else:
+        await message.answer("Пожалуйста, используй кнопки внизу экрана")
+
+# Обработчик по умолчанию
+@dp.message_handler()
+async def default_handler(message: types.Message):
+    await cmd_start(message, None)
 
 if __name__ == '__main__':
-    main()
+    executor.start_polling(dp, skip_updates=True)
